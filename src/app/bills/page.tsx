@@ -124,6 +124,13 @@ export default function InvoicesPage() {
     return data.properties.find((p) => p.id === propertyId);
   };
 
+  const getAccountBalance = (propertyId: string): number => {
+    if (!data) return 0;
+    const property = data.properties.find((p) => p.id === propertyId);
+    if (!property) return 0;
+    return calculatePropertyBalance(property, data.readings, data.payments, data.settings);
+  };
+
   const handleYearChange = (year: string) => {
     // When changing year, select the most recent month with data, or January
     const monthsWithData = Array.from(periodsWithData)
@@ -144,6 +151,8 @@ export default function InvoicesPage() {
 
   const generateInvoiceHTML = (invoice: Invoice) => {
     const property = getProperty(invoice.propertyId);
+    const accountBalance = getAccountBalance(invoice.propertyId);
+    const hasCredit = accountBalance < 0;
     return `
       <div style="page-break-after: always; padding: 40px;">
         <div style="text-align: center; margin-bottom: 40px;">
@@ -208,23 +217,17 @@ export default function InvoicesPage() {
               <td style="padding: 12px;"></td>
               <td style="padding: 12px; text-align: right;">${formatCurrency(invoice.totalAmount)}</td>
             </tr>
-            ${invoice.previousBalance !== 0 ? `
-            <tr style="border-bottom: 1px solid #ddd;">
-              <td style="padding: 12px;">Previous Balance</td>
-              <td style="padding: 12px;"></td>
-              <td style="padding: 12px; text-align: right; ${invoice.previousBalance < 0 ? 'color: #22c55e;' : ''}">
-                ${invoice.previousBalance < 0 ? '(' : ''}${formatCurrency(Math.abs(invoice.previousBalance))}${invoice.previousBalance < 0 ? ') credit' : ''}
-              </td>
-            </tr>` : ''}
           </tbody>
         </table>
 
-        <div style="padding: 20px; background: ${invoice.amountDue > 0 ? '#f0f7ff' : '#f0fdf4'}; border-radius: 8px; text-align: center;">
-          <p style="margin: 0 0 5px 0; font-size: 14px; color: #666;">Amount Due</p>
-          <p style="margin: 0; font-size: 28px; font-weight: bold; color: ${invoice.amountDue > 0 ? '#3366AA' : '#22c55e'};">
-            ${invoice.amountDue <= 0 ? formatCurrency(0) : formatCurrency(invoice.amountDue)}
+        <div style="padding: 20px; background: ${hasCredit ? '#f0fdf4' : '#fef2f2'}; border-radius: 8px; text-align: center;">
+          <p style="margin: 0 0 5px 0; font-size: 14px; color: #666;">Current Account Balance</p>
+          <p style="margin: 0; font-size: 28px; font-weight: bold; color: ${hasCredit ? '#22c55e' : '#dc2626'};">
+            ${formatCurrency(Math.abs(accountBalance))}
           </p>
-          ${invoice.amountDue <= 0 ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #22c55e;">Account has credit of ${formatCurrency(Math.abs(invoice.amountDue))}</p>` : ''}
+          <p style="margin: 5px 0 0 0; font-size: 14px; color: ${hasCredit ? '#22c55e' : '#dc2626'};">
+            ${hasCredit ? 'Credit' : 'Amount Due'}
+          </p>
         </div>
       </div>
     `;
@@ -433,15 +436,22 @@ export default function InvoicesPage() {
             </tbody>
           </table>
 
-          <div className={`p-4 rounded-lg text-center ${selectedInvoice.amountDue > 0 ? 'bg-[var(--primary)]/10' : 'bg-green-500/10'}`}>
-            <p className="text-sm text-[var(--muted)] mb-1">Amount Due</p>
-            <p className={`text-3xl font-bold ${selectedInvoice.amountDue > 0 ? 'text-[var(--primary)]' : 'text-green-500'}`}>
-              {selectedInvoice.amountDue <= 0 ? formatCurrency(0) : formatCurrency(selectedInvoice.amountDue)}
-            </p>
-            {selectedInvoice.amountDue <= 0 && (
-              <p className="text-sm text-green-500 mt-1">Account has credit of {formatCurrency(Math.abs(selectedInvoice.amountDue))}</p>
-            )}
-          </div>
+          {/* Account Balance Section */}
+          {(() => {
+            const accountBalance = getAccountBalance(selectedInvoice.propertyId);
+            const hasCredit = accountBalance < 0;
+            return (
+              <div className={`p-4 rounded-lg text-center ${hasCredit ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                <p className="text-sm text-[var(--muted)] mb-1">Current Account Balance</p>
+                <p className={`text-3xl font-bold ${hasCredit ? 'text-green-500' : 'text-red-500'}`}>
+                  {formatCurrency(Math.abs(accountBalance))}
+                </p>
+                <p className={`text-sm mt-1 ${hasCredit ? 'text-green-500' : 'text-red-500'}`}>
+                  {hasCredit ? 'Credit' : 'Amount Due'}
+                </p>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -570,32 +580,36 @@ export default function InvoicesPage() {
         <>
           {/* Mobile View - Cards */}
           <div className="md:hidden space-y-4">
-            {periodInvoices.map((invoice) => (
-              <button
-                key={invoice.id}
-                onClick={() => setSelectedInvoice(invoice)}
-                className="card w-full text-left hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{getPropertyName(invoice.propertyId)}</h3>
-                    <p className="text-sm text-[var(--muted)]">
-                      {invoice.totalGallons.toLocaleString()} gallons
-                    </p>
+            {periodInvoices.map((invoice) => {
+              const accountBalance = getAccountBalance(invoice.propertyId);
+              const hasCredit = accountBalance < 0;
+              return (
+                <button
+                  key={invoice.id}
+                  onClick={() => setSelectedInvoice(invoice)}
+                  className="card w-full text-left hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">{getPropertyName(invoice.propertyId)}</h3>
+                      <p className="text-sm text-[var(--muted)]">
+                        {invoice.totalGallons.toLocaleString()} gallons
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold">{formatCurrency(invoice.totalAmount)}</p>
+                      <p className="text-sm text-[var(--muted)]">Current charges</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold">{formatCurrency(invoice.totalAmount)}</p>
-                    <p className="text-sm text-[var(--muted)]">Current charges</p>
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <span className="text-sm text-[var(--muted)]">Account Balance</span>
+                    <span className={`font-semibold ${hasCredit ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(Math.abs(accountBalance))} {hasCredit ? 'credit' : 'due'}
+                    </span>
                   </div>
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t">
-                  <span className="text-sm text-[var(--muted)]">Amount Due</span>
-                  <span className={`font-semibold ${invoice.amountDue > 0 ? 'text-[var(--primary)]' : 'text-green-600'}`}>
-                    {invoice.amountDue <= 0 ? '$0.00' : formatCurrency(invoice.amountDue)}
-                  </span>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {/* Desktop View - Table */}
@@ -608,33 +622,37 @@ export default function InvoicesPage() {
                   <th className="text-right">Fixed Fee</th>
                   <th className="text-right">Water Charges</th>
                   <th className="text-right">Current Total</th>
-                  <th className="text-right">Amount Due</th>
+                  <th className="text-right">Account Balance</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {periodInvoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td className="font-medium">{getPropertyName(invoice.propertyId)}</td>
-                    <td className="text-right">{invoice.totalGallons.toLocaleString()}</td>
-                    <td className="text-right">{formatCurrency(invoice.fixedCharge)}</td>
-                    <td className="text-right">
-                      {formatCurrency(invoice.tier1Charge + invoice.tier2Charge + invoice.tier3Charge)}
-                    </td>
-                    <td className="text-right font-semibold">{formatCurrency(invoice.totalAmount)}</td>
-                    <td className={`text-right font-medium ${invoice.amountDue > 0 ? 'text-[var(--primary)]' : 'text-green-600'}`}>
-                      {invoice.amountDue <= 0 ? '$0.00' : formatCurrency(invoice.amountDue)}
-                    </td>
-                    <td className="text-right">
-                      <button
-                        onClick={() => setSelectedInvoice(invoice)}
-                        className="text-[var(--primary)] hover:underline"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {periodInvoices.map((invoice) => {
+                  const accountBalance = getAccountBalance(invoice.propertyId);
+                  const hasCredit = accountBalance < 0;
+                  return (
+                    <tr key={invoice.id}>
+                      <td className="font-medium">{getPropertyName(invoice.propertyId)}</td>
+                      <td className="text-right">{invoice.totalGallons.toLocaleString()}</td>
+                      <td className="text-right">{formatCurrency(invoice.fixedCharge)}</td>
+                      <td className="text-right">
+                        {formatCurrency(invoice.tier1Charge + invoice.tier2Charge + invoice.tier3Charge)}
+                      </td>
+                      <td className="text-right font-semibold">{formatCurrency(invoice.totalAmount)}</td>
+                      <td className={`text-right font-medium ${hasCredit ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(Math.abs(accountBalance))} {hasCredit ? 'credit' : 'due'}
+                      </td>
+                      <td className="text-right">
+                        <button
+                          onClick={() => setSelectedInvoice(invoice)}
+                          className="text-[var(--primary)] hover:underline"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="border-t-2">
@@ -657,7 +675,15 @@ export default function InvoicesPage() {
                     {formatCurrency(periodInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0))}
                   </td>
                   <td className="text-right font-bold">
-                    {formatCurrency(periodInvoices.reduce((sum, inv) => sum + Math.max(0, inv.amountDue), 0))}
+                    {(() => {
+                      const totalBalance = periodInvoices.reduce((sum, inv) => sum + getAccountBalance(inv.propertyId), 0);
+                      const hasCredit = totalBalance < 0;
+                      return (
+                        <span className={hasCredit ? 'text-green-600' : 'text-red-600'}>
+                          {formatCurrency(Math.abs(totalBalance))} {hasCredit ? 'credit' : 'due'}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td></td>
                 </tr>
