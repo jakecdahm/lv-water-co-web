@@ -14,6 +14,8 @@ export default function PropertiesPage() {
   const [nameDraft, setNameDraft] = useState('');
   const [editingAddress, setEditingAddress] = useState(false);
   const [addressDraft, setAddressDraft] = useState('');
+  const [editingBalanceAdjustment, setEditingBalanceAdjustment] = useState(false);
+  const [balanceAdjustmentDraft, setBalanceAdjustmentDraft] = useState('');
 
   useEffect(() => {
     loadData()
@@ -89,6 +91,27 @@ export default function PropertiesPage() {
     if (selectedProperty) {
       setAddressDraft(selectedProperty.address);
       setEditingAddress(true);
+    }
+  };
+
+  const handleSaveBalanceAdjustment = async () => {
+    if (!data || !selectedProperty) return;
+
+    const newAdjustment = parseFloat(balanceAdjustmentDraft) || 0;
+    const updatedProperties = data.properties.map((p) =>
+      p.id === selectedProperty.id ? { ...p, balanceAdjustment: newAdjustment } : p
+    );
+
+    const newData = { ...data, properties: updatedProperties };
+    setData(newData);
+    await saveData(newData);
+    setEditingBalanceAdjustment(false);
+  };
+
+  const startEditBalanceAdjustment = () => {
+    if (selectedProperty) {
+      setBalanceAdjustmentDraft(selectedProperty.balanceAdjustment.toString());
+      setEditingBalanceAdjustment(true);
     }
   };
 
@@ -293,6 +316,7 @@ export default function PropertiesPage() {
                   properties={data.properties}
                   readings={propertyReadings}
                   payments={propertyPayments}
+                  settings={data.settings}
                 />
               ) : (
                 <p className="text-[var(--muted)]">No activity recorded</p>
@@ -310,6 +334,60 @@ export default function PropertiesPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Balance Adjustment */}
+            <div className="card">
+              <h3 className="font-semibold mb-4">Balance Adjustment</h3>
+              <p className="text-sm text-[var(--muted)] mb-3">
+                Use this to correct the balance when historical data doesn&apos;t match your records.
+                Positive values increase amount due, negative values add credit.
+              </p>
+              {editingBalanceAdjustment ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={balanceAdjustmentDraft}
+                      onChange={(e) => setBalanceAdjustmentDraft(e.target.value)}
+                      className="w-full"
+                      style={{ paddingLeft: '1.75rem' }}
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveBalanceAdjustment} className="btn-primary text-sm py-1 px-3">
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingBalanceAdjustment(false)}
+                      className="btn-secondary text-sm py-1 px-3"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-lg font-medium">
+                      {formatCurrency(selectedProperty.balanceAdjustment)}
+                    </span>
+                    <span className="text-sm text-[var(--muted)] ml-2">
+                      {selectedProperty.balanceAdjustment < 0 ? '(adds credit)' : selectedProperty.balanceAdjustment > 0 ? '(adds to due)' : ''}
+                    </span>
+                  </div>
+                  <button
+                    onClick={startEditBalanceAdjustment}
+                    className="text-[var(--primary)] hover:underline text-sm"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

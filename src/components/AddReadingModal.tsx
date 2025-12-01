@@ -2,15 +2,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Modal from './Modal';
-import { Property, MeterReading, Meter } from '@/lib/types';
+import { Property, MeterReading, BillingSettings } from '@/lib/types';
 import { generateId, getTodayString } from '@/lib/data';
-import { getCurrentBillingPeriod } from '@/lib/billing';
+import { getCurrentBillingPeriod, calculateBill, formatCurrency } from '@/lib/billing';
 
 interface AddReadingModalProps {
   isOpen: boolean;
   onClose: () => void;
   properties: Property[];
   readings: MeterReading[];
+  settings?: BillingSettings;
   selectedPropertyId?: string;
   onSave: (reading: MeterReading) => void;
 }
@@ -20,6 +21,7 @@ export default function AddReadingModal({
   onClose,
   properties,
   readings,
+  settings,
   selectedPropertyId,
   onSave,
 }: AddReadingModalProps) {
@@ -56,6 +58,16 @@ export default function AddReadingModal({
       .filter((r) => r.meterId === meterId)
       .sort((a, b) => b.billingPeriod.localeCompare(a.billingPeriod))[0];
   }, [readings, meterId]);
+
+  // Calculate cost preview based on entered reading value
+  const costPreview = useMemo(() => {
+    if (!settings || !readingValue) return null;
+    const newValue = parseInt(readingValue, 10);
+    if (isNaN(newValue)) return null;
+    const previousValue = previousReading?.readingValue || 0;
+    const usage = Math.max(0, newValue - previousValue);
+    return calculateBill(usage, settings);
+  }, [settings, readingValue, previousReading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +162,18 @@ export default function AddReadingModal({
             <p className="text-sm text-[var(--muted)] mt-1">
               Previous reading: {previousReading.readingValue.toLocaleString()}
             </p>
+          )}
+          {costPreview && (
+            <div className="mt-2 p-2 bg-[var(--primary)]/10 border border-[var(--primary)]/30 rounded-lg">
+              <p className="text-sm">
+                <span className="text-[var(--muted)]">Usage:</span>{' '}
+                <span className="font-medium">{costPreview.totalGallons.toLocaleString()} gal</span>
+              </p>
+              <p className="text-sm">
+                <span className="text-[var(--muted)]">Estimated cost:</span>{' '}
+                <span className="font-semibold text-[var(--primary)]">{formatCurrency(costPreview.totalAmount)}</span>
+              </p>
+            </div>
           )}
         </div>
 

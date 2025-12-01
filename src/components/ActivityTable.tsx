@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Property, MeterReading, Payment } from '@/lib/types';
+import { Property, MeterReading, Payment, BillingSettings } from '@/lib/types';
 import { formatDate } from '@/lib/data';
-import { formatCurrency } from '@/lib/billing';
+import { formatCurrency, calculateBill } from '@/lib/billing';
 
 export type SortField = 'date' | 'property' | 'type' | 'amount';
 export type SortDirection = 'asc' | 'desc';
@@ -12,6 +12,7 @@ interface ActivityTableProps {
   properties: Property[];
   readings: MeterReading[];
   payments: Payment[];
+  settings?: BillingSettings;
   onEdit?: (activity: ActivityItem) => void;
   sortField?: SortField;
   sortDirection?: SortDirection;
@@ -28,12 +29,14 @@ export interface ActivityItem {
   amount?: number;
   usage?: number;
   readingValue?: number;
+  cost?: number;
 }
 
 export default function ActivityTable({
   properties,
   readings,
   payments,
+  settings,
   onEdit,
   sortField: externalSortField,
   sortDirection: externalSortDirection,
@@ -68,6 +71,7 @@ export default function ActivityTable({
 
     // Add readings
     for (const reading of readings) {
+      const cost = settings ? calculateBill(Math.max(0, reading.usage), settings).totalAmount : undefined;
       items.push({
         id: `reading-${reading.id}`,
         originalId: reading.id,
@@ -78,6 +82,7 @@ export default function ActivityTable({
         description: `Meter reading: ${reading.readingValue.toLocaleString()}`,
         usage: reading.usage,
         readingValue: reading.readingValue,
+        cost,
       });
     }
 
@@ -104,7 +109,7 @@ export default function ActivityTable({
     });
 
     return items;
-  }, [payments, readings, propertyMap, sortField, sortDirection]);
+  }, [payments, readings, propertyMap, settings, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     // Only allow internal sorting if not externally controlled
@@ -143,9 +148,16 @@ export default function ActivityTable({
                   +{formatCurrency(activity.amount!)}
                 </p>
               ) : (
-                <p className="text-[var(--primary)] font-semibold">
-                  {activity.usage?.toLocaleString()} gal
-                </p>
+                <div>
+                  <p className="text-[var(--primary)] font-semibold">
+                    {activity.usage?.toLocaleString()} gal
+                  </p>
+                  {activity.cost !== undefined && (
+                    <p className="text-red-500 text-sm">
+                      {formatCurrency(activity.cost)}
+                    </p>
+                  )}
+                </div>
               )}
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 activity.type === 'payment'
@@ -230,7 +242,12 @@ export default function ActivityTable({
                 {activity.type === 'payment' ? (
                   <span className="text-green-500">+{formatCurrency(activity.amount!)}</span>
                 ) : (
-                  <span className="text-[var(--primary)]">{activity.usage?.toLocaleString()} gal</span>
+                  <div>
+                    <span className="text-[var(--primary)]">{activity.usage?.toLocaleString()} gal</span>
+                    {activity.cost !== undefined && (
+                      <span className="text-red-500 ml-2 text-sm">({formatCurrency(activity.cost)})</span>
+                    )}
+                  </div>
                 )}
               </td>
               {onEdit && (

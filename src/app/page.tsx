@@ -321,6 +321,7 @@ export default function Dashboard() {
           properties={data.properties}
           readings={filteredReadings}
           payments={filteredPayments}
+          settings={data.settings}
           onEdit={openEditModal}
           sortField={sortField}
           sortDirection={sortDirection}
@@ -341,6 +342,7 @@ export default function Dashboard() {
         onClose={() => setShowReadingModal(false)}
         properties={data.properties}
         readings={data.readings}
+        settings={data.settings}
         selectedPropertyId={selectedPropertyId}
         onSave={handleAddReading}
       />
