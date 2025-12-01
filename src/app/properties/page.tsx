@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { AppData, Property } from '@/lib/types';
 import { loadData, saveData } from '@/lib/data';
 import { getLastSixMonthsUsage, formatShortPeriod, calculatePropertyBalance, formatCurrency } from '@/lib/billing';
+import ActivityTable from '@/components/ActivityTable';
 
 export default function PropertiesPage() {
   const [data, setData] = useState<AppData | null>(null);
@@ -36,12 +37,14 @@ export default function PropertiesPage() {
     return getLastSixMonthsUsage(selectedPropertyId, data.readings);
   }, [data, selectedPropertyId]);
 
+  const propertyReadings = useMemo(() => {
+    if (!data || !selectedPropertyId) return [];
+    return data.readings.filter((r) => r.propertyId === selectedPropertyId);
+  }, [data, selectedPropertyId]);
+
   const propertyPayments = useMemo(() => {
     if (!data || !selectedPropertyId) return [];
-    return data.payments
-      .filter((p) => p.propertyId === selectedPropertyId)
-      .sort((a, b) => b.receivedDate.localeCompare(a.receivedDate))
-      .slice(0, 10);
+    return data.payments.filter((p) => p.propertyId === selectedPropertyId);
   }, [data, selectedPropertyId]);
 
   const balance = useMemo(() => {
@@ -282,26 +285,17 @@ export default function PropertiesPage() {
               )}
             </div>
 
-            {/* Recent Payments */}
+            {/* Recent Activity */}
             <div className="card">
-              <h3 className="font-semibold mb-4">Recent Payments</h3>
-              {propertyPayments.length > 0 ? (
-                <div className="space-y-2">
-                  {propertyPayments.map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="flex justify-between items-center py-2 border-b last:border-b-0"
-                    >
-                      <div>
-                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
-                        <p className="text-sm text-[var(--muted)]">{payment.notes || 'Payment'}</p>
-                      </div>
-                      <p className="text-sm text-[var(--muted)]">{payment.receivedDate}</p>
-                    </div>
-                  ))}
-                </div>
+              <h3 className="font-semibold mb-4">Recent Activity</h3>
+              {(propertyReadings.length > 0 || propertyPayments.length > 0) ? (
+                <ActivityTable
+                  properties={data.properties}
+                  readings={propertyReadings}
+                  payments={propertyPayments}
+                />
               ) : (
-                <p className="text-[var(--muted)]">No payments recorded</p>
+                <p className="text-[var(--muted)]">No activity recorded</p>
               )}
             </div>
 
