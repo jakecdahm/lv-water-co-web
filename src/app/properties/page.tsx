@@ -152,12 +152,12 @@ export default function PropertiesPage() {
                       className={`text-sm ${
                         selectedPropertyId === property.id
                           ? 'text-white/80'
-                          : propBalance >= 0
+                          : propBalance < 0
                           ? 'text-green-600'
                           : 'text-red-600'
                       }`}
                     >
-                      {formatCurrency(Math.abs(propBalance))} {propBalance >= 0 ? 'credit' : 'due'}
+                      {formatCurrency(Math.abs(propBalance))} {propBalance < 0 ? 'credit' : 'due'}
                     </div>
                   </button>
                 );
@@ -241,9 +241,9 @@ export default function PropertiesPage() {
                     </div>
                   )}
                 </div>
-                <div className={`text-right ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`text-right ${balance < 0 ? 'text-green-600' : 'text-red-600'}`}>
                   <p className="text-2xl font-bold">{formatCurrency(Math.abs(balance))}</p>
-                  <p className="text-sm">{balance >= 0 ? 'Credit' : 'Amount Due'}</p>
+                  <p className="text-sm">{balance < 0 ? 'Credit' : 'Amount Due'}</p>
                 </div>
               </div>
             </div>
@@ -252,10 +252,11 @@ export default function PropertiesPage() {
             <div className="card">
               <h3 className="font-semibold mb-4">Usage History</h3>
               {usageHistory.length > 0 ? (
-                <div className="h-48 flex items-end gap-2">
+                <div className="flex items-end gap-2">
                   {usageHistory.map((item, index) => {
                     const maxUsage = Math.max(...usageHistory.map((h) => h.usage));
-                    const height = maxUsage > 0 ? (item.usage / maxUsage) * 100 : 0;
+                    const heightPercent = maxUsage > 0 ? (item.usage / maxUsage) * 100 : 0;
+                    const barHeight = Math.max(heightPercent, 5) * 1.2; // Max ~120px
                     const isLast = index === usageHistory.length - 1;
 
                     return (
@@ -267,7 +268,7 @@ export default function PropertiesPage() {
                           className={`w-full rounded-t-lg transition-all ${
                             isLast ? 'bg-[var(--primary)]' : 'bg-[var(--primary)]/40'
                           }`}
-                          style={{ height: `${Math.max(height, 4)}%` }}
+                          style={{ height: `${barHeight}px` }}
                         />
                         <span className={`text-xs mt-2 ${isLast ? 'text-[var(--primary)] font-medium' : 'text-[var(--muted)]'}`}>
                           {formatShortPeriod(item.period)}
