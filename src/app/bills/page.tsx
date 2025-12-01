@@ -554,36 +554,26 @@ export default function InvoicesPage() {
         <>
           {/* Mobile View - Cards */}
           <div className="md:hidden space-y-4">
-            {periodInvoices.map((invoice) => {
-              const accountBalance = getAccountBalance(invoice.propertyId);
-              const hasCredit = accountBalance < 0;
-              return (
-                <button
-                  key={invoice.id}
-                  onClick={() => setSelectedInvoice(invoice)}
-                  className="card w-full text-left hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg">{getPropertyName(invoice.propertyId)}</h3>
-                      <p className="text-sm text-[var(--muted)]">
-                        {invoice.totalGallons.toLocaleString()} gallons
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold">{formatCurrency(invoice.totalAmount)}</p>
-                      <p className="text-sm text-[var(--muted)]">Current charges</p>
-                    </div>
+            {periodInvoices.map((invoice) => (
+              <button
+                key={invoice.id}
+                onClick={() => setSelectedInvoice(invoice)}
+                className="card w-full text-left hover:shadow-md transition-shadow"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-lg">{getPropertyName(invoice.propertyId)}</h3>
+                    <p className="text-sm text-[var(--muted)]">
+                      {invoice.totalGallons.toLocaleString()} gallons
+                    </p>
                   </div>
-                  <div className="flex justify-between items-center pt-3 border-t">
-                    <span className="text-sm text-[var(--muted)]">Account Balance</span>
-                    <span className={`font-semibold ${hasCredit ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(Math.abs(accountBalance))} {hasCredit ? 'credit' : 'due'}
-                    </span>
+                  <div className="text-right">
+                    <p className="text-xl font-bold">{formatCurrency(invoice.totalAmount)}</p>
+                    <p className="text-sm text-[var(--muted)]">Current charges</p>
                   </div>
-                </button>
-              );
-            })}
+                </div>
+              </button>
+            ))}
           </div>
 
           {/* Desktop View - Table */}
@@ -596,37 +586,29 @@ export default function InvoicesPage() {
                   <th className="text-right">Fixed Fee</th>
                   <th className="text-right">Water Charges</th>
                   <th className="text-right">Current Total</th>
-                  <th className="text-right">Account Balance</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {periodInvoices.map((invoice) => {
-                  const accountBalance = getAccountBalance(invoice.propertyId);
-                  const hasCredit = accountBalance < 0;
-                  return (
-                    <tr key={invoice.id}>
-                      <td className="font-medium">{getPropertyName(invoice.propertyId)}</td>
-                      <td className="text-right">{invoice.totalGallons.toLocaleString()}</td>
-                      <td className="text-right">{formatCurrency(invoice.fixedCharge)}</td>
-                      <td className="text-right">
-                        {formatCurrency(invoice.tier1Charge + invoice.tier2Charge + invoice.tier3Charge)}
-                      </td>
-                      <td className="text-right font-semibold">{formatCurrency(invoice.totalAmount)}</td>
-                      <td className={`text-right font-medium ${hasCredit ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(Math.abs(accountBalance))} {hasCredit ? 'credit' : 'due'}
-                      </td>
-                      <td className="text-right">
-                        <button
-                          onClick={() => setSelectedInvoice(invoice)}
-                          className="text-[var(--primary)] hover:underline"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {periodInvoices.map((invoice) => (
+                  <tr key={invoice.id}>
+                    <td className="font-medium">{getPropertyName(invoice.propertyId)}</td>
+                    <td className="text-right">{invoice.totalGallons.toLocaleString()}</td>
+                    <td className="text-right">{formatCurrency(invoice.fixedCharge)}</td>
+                    <td className="text-right">
+                      {formatCurrency(invoice.tier1Charge + invoice.tier2Charge + invoice.tier3Charge)}
+                    </td>
+                    <td className="text-right font-semibold">{formatCurrency(invoice.totalAmount)}</td>
+                    <td className="text-right">
+                      <button
+                        onClick={() => setSelectedInvoice(invoice)}
+                        className="text-[var(--primary)] hover:underline"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
               <tfoot>
                 <tr className="border-t-2">
@@ -647,17 +629,6 @@ export default function InvoicesPage() {
                   </td>
                   <td className="text-right font-bold">
                     {formatCurrency(periodInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0))}
-                  </td>
-                  <td className="text-right font-bold">
-                    {(() => {
-                      const totalBalance = periodInvoices.reduce((sum, inv) => sum + getAccountBalance(inv.propertyId), 0);
-                      const hasCredit = totalBalance < 0;
-                      return (
-                        <span className={hasCredit ? 'text-green-600' : 'text-red-600'}>
-                          {formatCurrency(Math.abs(totalBalance))} {hasCredit ? 'credit' : 'due'}
-                        </span>
-                      );
-                    })()}
                   </td>
                   <td></td>
                 </tr>
