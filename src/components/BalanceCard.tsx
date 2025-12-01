@@ -25,7 +25,7 @@ export default function BalanceCard({
   isSelected,
 }: BalanceCardProps) {
   const balance = calculatePropertyBalance(property, readings, payments, settings);
-  const isPositive = balance >= 0;
+  const hasCredit = balance < 0;  // negative = customer has credit
 
   return (
     <div className={`card transition-all ${isSelected ? 'ring-2 ring-[var(--primary)]' : ''}`}>
@@ -39,9 +39,9 @@ export default function BalanceCard({
           </h3>
           <p className="text-sm text-[var(--muted)]">{property.address.split('\n')[0]}</p>
         </div>
-        <div className={`text-right ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+        <div className={`text-right ${hasCredit ? 'text-green-500' : 'text-red-500'}`}>
           <p className="text-2xl font-bold">{formatCurrency(Math.abs(balance))}</p>
-          <p className="text-sm">{isPositive ? 'Credit' : 'Due'}</p>
+          <p className="text-sm">{hasCredit ? 'Credit' : 'Due'}</p>
         </div>
       </div>
 

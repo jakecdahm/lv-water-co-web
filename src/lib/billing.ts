@@ -60,16 +60,16 @@ export function calculatePropertyBalance(
     usageByPeriod.set(reading.billingPeriod, currentUsage + reading.usage);
   }
 
-  // Calculate charges for each period
+  // Calculate charges for each period (bills increase what customer owes)
   for (const usage of usageByPeriod.values()) {
     const bill = calculateBill(Math.max(0, usage), settings);
-    balance -= bill.totalAmount;
+    balance += bill.totalAmount;
   }
 
-  // Add payments
+  // Subtract payments (payments reduce what customer owes)
   const propertyPayments = payments.filter(p => p.propertyId === property.id);
   for (const payment of propertyPayments) {
-    balance += payment.amount;
+    balance -= payment.amount;
   }
 
   return balance;
@@ -174,6 +174,6 @@ export function generateInvoice(
     fixedCharge: bill.fixedCharge,
     totalAmount: bill.totalAmount,
     previousBalance,
-    amountDue: previousBalance - bill.totalAmount,
+    amountDue: previousBalance + bill.totalAmount,
   };
 }
