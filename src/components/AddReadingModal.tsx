@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Modal from './Modal';
 import { Property, MeterReading, Meter } from '@/lib/types';
 import { generateId, getTodayString } from '@/lib/data';
@@ -28,6 +28,13 @@ export default function AddReadingModal({
   const [readingValue, setReadingValue] = useState('');
   const [date, setDate] = useState(getTodayString());
   const [billingPeriod, setBillingPeriod] = useState(getCurrentBillingPeriod());
+
+  // Sync propertyId when selectedPropertyId prop changes
+  useEffect(() => {
+    if (selectedPropertyId) {
+      setPropertyId(selectedPropertyId);
+    }
+  }, [selectedPropertyId]);
 
   const selectedProperty = useMemo(
     () => properties.find((p) => p.id === propertyId),

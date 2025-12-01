@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Property, Payment } from '@/lib/types';
 import { generateId, getTodayString } from '@/lib/data';
@@ -24,6 +24,13 @@ export default function AddPaymentModal({
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(getTodayString());
   const [notes, setNotes] = useState('');
+
+  // Sync propertyId when selectedPropertyId prop changes
+  useEffect(() => {
+    if (selectedPropertyId) {
+      setPropertyId(selectedPropertyId);
+    }
+  }, [selectedPropertyId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +76,7 @@ export default function AddPaymentModal({
           <label className="block text-sm font-medium text-[var(--foreground)] mb-1">
             Amount
           </label>
-          <div className="relative">
+          <div className="relative w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">$</span>
             <input
               type="number"
@@ -77,7 +84,7 @@ export default function AddPaymentModal({
               min="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="pl-7"
+              className="w-full pl-7"
               placeholder="0.00"
               required
               inputMode="decimal"
