@@ -247,10 +247,11 @@ export default function Dashboard() {
               <div key={propertyId}>
                 <h3 className="font-medium mb-3 text-[var(--muted)]">{propertyName}</h3>
                 {usage.length > 0 ? (
-                  <div className="h-32 flex items-end gap-2">
+                  <div className="flex items-end gap-2">
                     {usage.map((item, index) => {
                       const maxUsage = Math.max(...usage.map((h) => h.usage));
-                      const height = maxUsage > 0 ? (item.usage / maxUsage) * 100 : 0;
+                      const heightPercent = maxUsage > 0 ? (item.usage / maxUsage) * 100 : 0;
+                      const barHeight = Math.max(heightPercent, 5) * 0.8; // Max 80px
                       const isLast = index === usage.length - 1;
 
                       return (
@@ -262,7 +263,7 @@ export default function Dashboard() {
                             className={`w-full rounded-t-lg transition-all ${
                               isLast ? 'bg-[var(--primary)]' : 'bg-[var(--primary)]/40'
                             }`}
-                            style={{ height: `${Math.max(height, 4)}%` }}
+                            style={{ height: `${barHeight}px` }}
                           />
                           <span className={`text-xs mt-2 ${isLast ? 'text-[var(--primary)] font-medium' : 'text-[var(--muted)]'}`}>
                             {formatShortPeriod(item.period)}
