@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { AppData, Payment, MeterReading } from '@/lib/types';
 import { loadData, saveData } from '@/lib/data';
 import BalanceCard from '@/components/BalanceCard';
-import ActivityTable from '@/components/ActivityTable';
+import ActivityTable, { ActivityItem } from '@/components/ActivityTable';
 import AddPaymentModal from '@/components/AddPaymentModal';
 import AddReadingModal from '@/components/AddReadingModal';
+import EditActivityModal from '@/components/EditActivityModal';
 
 export default function Dashboard() {
   const [data, setData] = useState<AppData | null>(null);
@@ -16,7 +17,9 @@ export default function Dashboard() {
   // Modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReadingModal, setShowReadingModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | undefined>();
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
 
   useEffect(() => {
     loadData()
@@ -49,6 +52,30 @@ export default function Dashboard() {
     await saveData(newData);
   };
 
+  const handleEditPayment = async (payment: Payment) => {
+    if (!data) return;
+
+    const newData = {
+      ...data,
+      payments: data.payments.map(p => p.id === payment.id ? payment : p),
+    };
+
+    setData(newData);
+    await saveData(newData);
+  };
+
+  const handleEditReading = async (reading: MeterReading) => {
+    if (!data) return;
+
+    const newData = {
+      ...data,
+      readings: data.readings.map(r => r.id === reading.id ? reading : r),
+    };
+
+    setData(newData);
+    await saveData(newData);
+  };
+
   const handleDeletePayment = async (paymentId: string) => {
     if (!data) return;
 
@@ -71,6 +98,11 @@ export default function Dashboard() {
 
     setData(newData);
     await saveData(newData);
+  };
+
+  const openEditModal = (activity: ActivityItem) => {
+    setSelectedActivity(activity);
+    setShowEditModal(true);
   };
 
   const openPaymentModal = (propertyId?: string) => {
@@ -162,8 +194,7 @@ export default function Dashboard() {
           properties={data.properties}
           readings={data.readings}
           payments={data.payments}
-          onDeletePayment={handleDeletePayment}
-          onDeleteReading={handleDeleteReading}
+          onEdit={openEditModal}
         />
       </div>
 
@@ -183,6 +214,26 @@ export default function Dashboard() {
         readings={data.readings}
         selectedPropertyId={selectedPropertyId}
         onSave={handleAddReading}
+      />
+
+      <EditActivityModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedActivity(null);
+        }}
+        activity={selectedActivity}
+        properties={data.properties}
+        onSavePayment={handleEditPayment}
+        onSaveReading={handleEditReading}
+        onDeletePayment={handleDeletePayment}
+        onDeleteReading={handleDeleteReading}
+        originalPayment={selectedActivity?.type === 'payment'
+          ? data.payments.find(p => p.id === selectedActivity.originalId)
+          : undefined}
+        originalReading={selectedActivity?.type === 'reading'
+          ? data.readings.find(r => r.id === selectedActivity.originalId)
+          : undefined}
       />
     </div>
   );

@@ -9,14 +9,13 @@ interface ActivityTableProps {
   properties: Property[];
   readings: MeterReading[];
   payments: Payment[];
-  onDeletePayment?: (paymentId: string) => void;
-  onDeleteReading?: (readingId: string) => void;
+  onEdit?: (activity: ActivityItem) => void;
 }
 
 type SortField = 'date' | 'property' | 'type' | 'amount';
 type SortDirection = 'asc' | 'desc';
 
-interface ActivityItem {
+export interface ActivityItem {
   id: string;
   originalId: string;
   date: string;
@@ -26,21 +25,12 @@ interface ActivityItem {
   description: string;
   amount?: number;
   usage?: number;
+  readingValue?: number;
 }
 
-export default function ActivityTable({ properties, readings, payments, onDeletePayment, onDeleteReading }: ActivityTableProps) {
+export default function ActivityTable({ properties, readings, payments, onEdit }: ActivityTableProps) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  const handleDelete = (activity: ActivityItem) => {
-    if (activity.type === 'payment' && onDeletePayment) {
-      onDeletePayment(activity.originalId);
-    } else if (activity.type === 'reading' && onDeleteReading) {
-      onDeleteReading(activity.originalId);
-    }
-    setDeleteConfirm(null);
-  };
 
   const propertyMap = useMemo(() => {
     return new Map(properties.map(p => [p.id, p.name]));
@@ -74,6 +64,7 @@ export default function ActivityTable({ properties, readings, payments, onDelete
         propertyName: propertyMap.get(reading.propertyId) || 'Unknown',
         description: `Meter reading: ${reading.readingValue.toLocaleString()}`,
         usage: reading.usage,
+        readingValue: reading.readingValue,
       });
     }
 
@@ -152,34 +143,17 @@ export default function ActivityTable({ properties, readings, payments, onDelete
           {activity.description && activity.type === 'payment' && activity.description !== 'Payment received' && (
             <p className="text-sm text-[var(--muted)] mt-2">{activity.description}</p>
           )}
-          {(onDeletePayment || onDeleteReading) && (
+          {onEdit && (
             <div className="mt-3 pt-3 border-t border-[var(--border)]">
-              {deleteConfirm === activity.id ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--muted)]">Delete this {activity.type}?</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1 text-sm rounded-lg bg-[var(--border)] hover:bg-[var(--border)]/80"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleDelete(activity)}
-                      className="px-3 py-1 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setDeleteConfirm(activity.id)}
-                  className="text-sm text-red-500 hover:text-red-600"
-                >
-                  Delete
-                </button>
-              )}
+              <button
+                onClick={() => onEdit(activity)}
+                className="text-sm text-[var(--primary)] hover:text-[var(--primary)]/80 flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
             </div>
           )}
         </div>
@@ -218,7 +192,7 @@ export default function ActivityTable({ properties, readings, payments, onDelete
             >
               Amount <SortIcon field="amount" />
             </th>
-            {(onDeletePayment || onDeleteReading) && <th className="w-24"></th>}
+            {onEdit && <th className="w-16"></th>}
           </tr>
         </thead>
         <tbody>
@@ -243,34 +217,17 @@ export default function ActivityTable({ properties, readings, payments, onDelete
                   <span className="text-[var(--primary)]">{activity.usage?.toLocaleString()} gal</span>
                 )}
               </td>
-              {(onDeletePayment || onDeleteReading) && (
+              {onEdit && (
                 <td className="text-right">
-                  {deleteConfirm === activity.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="px-2 py-1 text-xs rounded bg-[var(--border)] hover:bg-[var(--border)]/80"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleDelete(activity)}
-                        className="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirm(activity.id)}
-                      className="p-1 text-[var(--muted)] hover:text-red-500 transition-colors"
-                      title="Delete"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onEdit(activity)}
+                    className="p-1 text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
+                    title="Edit"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
                 </td>
               )}
             </tr>
