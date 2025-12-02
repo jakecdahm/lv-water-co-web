@@ -190,6 +190,11 @@ export default function InvoicesPage() {
           </thead>
           <tbody>
             <tr style="border-bottom: 1px solid #ddd;">
+              <td style="padding: 12px;">Previous unpaid balance</td>
+              <td style="padding: 12px; text-align: right;"></td>
+              <td style="padding: 12px; text-align: right;">${formatCurrency(-invoice.previousBalance)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
               <td style="padding: 12px;">Monthly Service Fee</td>
               <td style="padding: 12px; text-align: right;">1</td>
               <td style="padding: 12px; text-align: right;">${formatCurrency(invoice.fixedCharge)}</td>
@@ -393,6 +398,11 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody>
+              <tr className="border-b">
+                <td className="py-3">Previous unpaid balance</td>
+                <td className="py-3 text-right"></td>
+                <td className="py-3 text-right">{formatCurrency(-selectedInvoice.previousBalance)}</td>
+              </tr>
               <tr className="border-b">
                 <td className="py-3">Monthly Service Fee</td>
                 <td className="py-3 text-right">1</td>
