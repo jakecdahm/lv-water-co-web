@@ -64,7 +64,7 @@ export default function SettingsPage() {
     const rows: string[] = [];
 
     // Header row
-    rows.push('Property Name,Type,Date,Description,Amount,Balance');
+    rows.push('Property Name,Type,Date,Description,Value,Amount,Balance');
 
     // Create a map for property balances
     const propertyBalances = new Map<string, number>();
@@ -85,31 +85,40 @@ export default function SettingsPage() {
       date: string;
       type: 'reading' | 'payment';
       description: string;
+      value: string | null;
       amount: number;
     }> = [];
 
     // Add payments
     data.payments.forEach(payment => {
       const propertyName = data.properties.find(p => p.id === payment.propertyId)?.name || 'Unknown';
+      // Extract check number from notes if present
+      const checkNumber = payment.notes && payment.notes.trim() !== '' ? payment.notes : null;
       allActivities.push({
         propertyId: payment.propertyId,
         propertyName,
         date: payment.receivedDate,
         type: 'payment',
-        description: payment.notes || 'Payment received',
+        description: 'Payment Received',
+        value: checkNumber,
         amount: payment.amount,
       });
     });
 
     // Add readings
     data.readings.forEach(reading => {
-      const propertyName = data.properties.find(p => p.id === reading.propertyId)?.name || 'Unknown';
+      const property = data.properties.find(p => p.id === reading.propertyId);
+      const propertyName = property?.name || 'Unknown';
+      // Find the meter label for this reading
+      const meter = property?.meters.find(m => m.id === reading.meterId);
+      const meterLabel = meter?.label || 'Unknown Meter';
       allActivities.push({
         propertyId: reading.propertyId,
         propertyName,
         date: reading.readingDate,
         type: 'reading',
-        description: `Meter reading: ${reading.readingValue.toLocaleString()} (Usage: ${reading.usage.toLocaleString()} gal)`,
+        description: `Meter Reading: ${meterLabel}`,
+        value: reading.readingValue.toString(),
         amount: reading.usage,
       });
     });
@@ -122,9 +131,10 @@ export default function SettingsPage() {
       const balance = propertyBalances.get(activity.propertyId) || 0;
       const amountStr = activity.amount.toString();
       const balanceStr = balance.toFixed(2);
+      const valueStr = activity.value !== null ? activity.value : '';
 
       rows.push(
-        `"${activity.propertyName}","${activity.type}","${activity.date}","${activity.description.replace(/"/g, '""')}","${amountStr}","${balanceStr}"`
+        `"${activity.propertyName}","${activity.type}","${activity.date}","${activity.description.replace(/"/g, '""')}","${valueStr}","${amountStr}","${balanceStr}"`
       );
     });
 
