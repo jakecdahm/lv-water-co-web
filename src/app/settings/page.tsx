@@ -108,10 +108,15 @@ export default function SettingsPage() {
     // Add readings
     data.readings.forEach(reading => {
       const property = data.properties.find(p => p.id === reading.propertyId);
-      const propertyName = property?.name || 'Unknown';
+      const baseName = property?.name || 'Unknown';
       // Find the meter label for this reading
       const meter = property?.meters.find(m => m.id === reading.meterId);
       const meterLabel = meter?.label || 'Unknown Meter';
+      // Extract well number from meter label (e.g., "Well 1" -> "1")
+      const wellNumberMatch = meterLabel.match(/(\d+)/);
+      const wellNumber = wellNumberMatch ? wellNumberMatch[1] : null;
+      // Append well number to property name
+      const propertyName = wellNumber ? `${baseName} ${wellNumber}` : baseName;
       allActivities.push({
         propertyId: reading.propertyId,
         propertyName,
