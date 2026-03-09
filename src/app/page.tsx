@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { AppData, Payment, MeterReading } from '@/lib/types';
 import { loadData, saveData } from '@/lib/data';
 import { getLastSixMonthsUsage, formatShortPeriod } from '@/lib/billing';
@@ -11,6 +12,7 @@ import AddReadingModal from '@/components/AddReadingModal';
 import EditActivityModal from '@/components/EditActivityModal';
 
 export default function Dashboard() {
+  const { data: session } = useSession();
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function Dashboard() {
 
     const newData = {
       ...data,
-      payments: [...data.payments, payment],
+      payments: [...data.payments, { ...payment, recordedBy: session?.user?.email ?? undefined }],
     };
 
     setData(newData);
@@ -53,7 +55,7 @@ export default function Dashboard() {
 
     const newData = {
       ...data,
-      readings: [...data.readings, reading],
+      readings: [...data.readings, { ...reading, recordedBy: session?.user?.email ?? undefined }],
     };
 
     setData(newData);
@@ -65,7 +67,7 @@ export default function Dashboard() {
 
     const newData = {
       ...data,
-      payments: data.payments.map(p => p.id === payment.id ? payment : p),
+      payments: data.payments.map(p => p.id === payment.id ? { ...payment, recordedBy: session?.user?.email ?? undefined } : p),
     };
 
     setData(newData);
@@ -77,7 +79,7 @@ export default function Dashboard() {
 
     const newData = {
       ...data,
-      readings: data.readings.map(r => r.id === reading.id ? reading : r),
+      readings: data.readings.map(r => r.id === reading.id ? { ...reading, recordedBy: session?.user?.email ?? undefined } : r),
     };
 
     setData(newData);

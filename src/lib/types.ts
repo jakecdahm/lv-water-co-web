@@ -23,6 +23,7 @@ export interface MeterReading {
   readingValue: number;
   rawUsage: number;
   usage: number;
+  recordedBy?: string;
 }
 
 export interface Payment {
@@ -31,6 +32,7 @@ export interface Payment {
   amount: number;
   receivedDate: string;
   notes: string;
+  recordedBy?: string;
 }
 
 export interface Invoice {

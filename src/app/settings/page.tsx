@@ -56,7 +56,7 @@ export default function SettingsPage() {
     const rows: string[] = [];
 
     // Header row
-    rows.push('Property Name,Type,Date,Description,Value,Amount,Balance');
+    rows.push('Property Name,Type,Date,Description,Value,Amount,Balance,Recorded By');
 
     // Create a map for property balances
     const propertyBalances = new Map<string, number>();
@@ -79,6 +79,7 @@ export default function SettingsPage() {
       description: string;
       value: string | null;
       amount: number;
+      recordedBy: string | null;
     }> = [];
 
     // Add payments
@@ -94,6 +95,7 @@ export default function SettingsPage() {
         description: 'Payment Received',
         value: checkNumber,
         amount: payment.amount,
+        recordedBy: payment.recordedBy ?? null,
       });
     });
 
@@ -117,6 +119,7 @@ export default function SettingsPage() {
         description: `Meter Reading: ${meterLabel}`,
         value: reading.readingValue.toString(),
         amount: reading.usage,
+        recordedBy: reading.recordedBy ?? null,
       });
     });
 
@@ -129,9 +132,10 @@ export default function SettingsPage() {
       const amountStr = activity.amount.toString();
       const balanceStr = balance.toFixed(2);
       const valueStr = activity.value !== null ? activity.value : '';
+      const recordedByStr = activity.recordedBy ?? '';
 
       rows.push(
-        `"${activity.propertyName}","${activity.type}","${activity.date}","${activity.description.replace(/"/g, '""')}","${valueStr}","${amountStr}","${balanceStr}"`
+        `"${activity.propertyName}","${activity.type}","${activity.date}","${activity.description.replace(/"/g, '""')}","${valueStr}","${amountStr}","${balanceStr}","${recordedByStr}"`
       );
     });
 
