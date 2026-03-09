@@ -20,6 +20,9 @@
 # production
 /build
 
+# local data store (dev only — persists across sessions but not committed)
+/data/data.local.json
+
 # misc
 .DS_Store
 *.pem

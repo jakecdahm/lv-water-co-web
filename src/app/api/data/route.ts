@@ -4,7 +4,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import initialData from '../../../../data/data.json';
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'data.json');
+const DATA_SEED_FILE = path.join(process.cwd(), 'data', 'data.json');
+const DATA_LOCAL_FILE = path.join(process.cwd(), 'data', 'data.local.json');
 const BLOB_FILENAME = 'lv-water-co-data.json';
 
 // GET: Read data
@@ -38,10 +39,14 @@ export async function GET() {
       return NextResponse.json(initialData);
     }
 
-    // Local file for development
-    const fileContent = await fs.readFile(DATA_FILE, 'utf-8');
-    const data = JSON.parse(fileContent);
-    return NextResponse.json(data);
+    // Local file for development — use data.local.json (gitignored), fall back to seed data.json
+    try {
+      const fileContent = await fs.readFile(DATA_LOCAL_FILE, 'utf-8');
+      return NextResponse.json(JSON.parse(fileContent));
+    } catch {
+      const fileContent = await fs.readFile(DATA_SEED_FILE, 'utf-8');
+      return NextResponse.json(JSON.parse(fileContent));
+    }
   } catch (error) {
     console.error('Error reading data:', error);
     return NextResponse.json(
@@ -66,8 +71,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Local file for development
-    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    // Local file for development — always write to data.local.json (gitignored)
+    await fs.writeFile(DATA_LOCAL_FILE, JSON.stringify(data, null, 2), 'utf-8');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error writing data:', error);
